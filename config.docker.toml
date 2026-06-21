@@ -1,8 +1,8 @@
 poll_interval_secs = 300
 notify_on_first_run = false
 state_path = "/app/data/state.json"
-default_webhook_url = ""
-default_username = "Hakuren-Bot"
+webhook_url = ""
+discord_username = "Hakuren-Bot"
 
 [[watch]]
 urlname = "kokuren888"

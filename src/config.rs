@@ -12,9 +12,9 @@ pub struct Config {
     #[serde(default = "default_state_path")]
     pub state_path: String,
     #[serde(default)]
-    pub default_webhook_url: Option<String>,
+    pub webhook_url: Option<String>,
     #[serde(default)]
-    pub default_username: Option<String>,
+    pub discord_username: Option<String>,
     pub watch: Vec<Watch>,
 }
 
@@ -24,7 +24,7 @@ pub struct Watch {
     #[serde(default)]
     pub webhook_url: Option<String>,
     #[serde(default)]
-    pub username: Option<String>,
+    pub discord_username: Option<String>,
     #[serde(default)]
     pub mention: Option<String>,
 }
@@ -43,10 +43,10 @@ impl Config {
             .with_context(|| format!("failed to read config {}", path.display()))?;
         let mut cfg: Config = toml::from_str(&text).context("failed to parse config TOML")?;
 
-        if non_empty(&cfg.default_webhook_url).is_none() {
+        if non_empty(&cfg.webhook_url).is_none() {
             if let Ok(v) = std::env::var("DISCORD_WEBHOOK_URL") {
                 if !v.is_empty() {
-                    cfg.default_webhook_url = Some(v);
+                    cfg.webhook_url = Some(v);
                 }
             }
         }
@@ -65,7 +65,7 @@ impl Config {
             }
             if self.webhook_for(w).is_empty() {
                 anyhow::bail!(
-                    "watch '{}' has no webhook_url and no default_webhook_url is set",
+                    "watch '{}' has no webhook_url and no top-level webhook_url is set",
                     w.urlname
                 );
             }
@@ -75,12 +75,12 @@ impl Config {
 
     pub fn webhook_for<'a>(&'a self, w: &'a Watch) -> &'a str {
         non_empty(&w.webhook_url)
-            .or_else(|| non_empty(&self.default_webhook_url))
+            .or_else(|| non_empty(&self.webhook_url))
             .unwrap_or("")
     }
 
     pub fn username_for<'a>(&'a self, w: &'a Watch) -> Option<&'a str> {
-        non_empty(&w.username).or_else(|| non_empty(&self.default_username))
+        non_empty(&w.discord_username).or_else(|| non_empty(&self.discord_username))
     }
 }
 

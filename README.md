@@ -11,7 +11,7 @@ docker compose up -d --build
 
 監視対象は`config.docker.toml`の`[[watch]]`で指定する．stateは名前付きボリュームに残るので再起動しても再通知しない．
 
-## ローカル
+## Local
 
 ```
 cp config.example.toml config.toml   # urlnameとwebhook_urlを埋める

@@ -1,5 +1,6 @@
 services:
   hakuren-bot:
+    container_name: Hakuren-Bot
     build: .
     image: hakuren-bot
     restart: unless-stopped

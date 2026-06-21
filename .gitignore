@@ -1,0 +1,6 @@
+/target
+/config.toml
+/state.json
+/.env
+*.json.tmp
+*.log

@@ -1,0 +1,13 @@
+services:
+  hakuren-bot:
+    build: .
+    image: hakuren-bot
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      RUST_LOG: hakuren_bot=info
+    volumes:
+      - hakuren-state:/app/data
+
+volumes:
+  hakuren-state:

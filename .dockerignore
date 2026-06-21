@@ -1,0 +1,8 @@
+target
+.git
+config.toml
+state.json
+*.json.tmp
+*.log
+.env
+*.jpg

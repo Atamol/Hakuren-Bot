@@ -1,0 +1,10 @@
+poll_interval_secs = 300
+notify_on_first_run = false
+state_path = "state.json"
+default_webhook_url = ""
+default_username = "Hakuren-Bot"
+
+[[watch]]
+urlname = "fladdict"
+webhook_url = "https://discord.com/api/webhooks/xxxxxxxxxx/yyyyyyyyyy"
+# mention = "<@&123456789012345678>"

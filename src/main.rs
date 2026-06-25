@@ -1,8 +1,10 @@
 mod config;
+mod feed;
 mod note;
 mod notifier;
 mod state;
 mod watcher;
+mod youtube;
 
 use std::path::PathBuf;
 

@@ -15,12 +15,26 @@ pub struct Config {
     pub webhook_url: Option<String>,
     #[serde(default)]
     pub discord_username: Option<String>,
+    #[serde(default)]
     pub watch: Vec<Watch>,
+    #[serde(default)]
+    pub youtube: Vec<YoutubeWatch>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Watch {
     pub urlname: String,
+    #[serde(default)]
+    pub webhook_url: Option<String>,
+    #[serde(default)]
+    pub discord_username: Option<String>,
+    #[serde(default)]
+    pub mention: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct YoutubeWatch {
+    pub channel: String,
     #[serde(default)]
     pub webhook_url: Option<String>,
     #[serde(default)]
@@ -56,31 +70,42 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
-        if self.watch.is_empty() {
-            anyhow::bail!("no [[watch]] entries in config");
+        if self.watch.is_empty() && self.youtube.is_empty() {
+            anyhow::bail!("no [[watch]] or [[youtube]] entries in config");
         }
         for w in &self.watch {
             if w.urlname.trim().is_empty() {
                 anyhow::bail!("a [[watch]] entry has an empty urlname");
             }
-            if self.webhook_for(w).is_empty() {
+            if self.webhook_for(&w.webhook_url).is_empty() {
                 anyhow::bail!(
                     "watch '{}' has no webhook_url and no top-level webhook_url is set",
                     w.urlname
                 );
             }
         }
+        for y in &self.youtube {
+            if y.channel.trim().is_empty() {
+                anyhow::bail!("a [[youtube]] entry has an empty channel");
+            }
+            if self.webhook_for(&y.webhook_url).is_empty() {
+                anyhow::bail!(
+                    "youtube '{}' has no webhook_url and no top-level webhook_url is set",
+                    y.channel
+                );
+            }
+        }
         Ok(())
     }
 
-    pub fn webhook_for<'a>(&'a self, w: &'a Watch) -> &'a str {
-        non_empty(&w.webhook_url)
+    pub fn webhook_for<'a>(&'a self, own: &'a Option<String>) -> &'a str {
+        non_empty(own)
             .or_else(|| non_empty(&self.webhook_url))
             .unwrap_or("")
     }
 
-    pub fn username_for<'a>(&'a self, w: &'a Watch) -> Option<&'a str> {
-        non_empty(&w.discord_username).or_else(|| non_empty(&self.discord_username))
+    pub fn username_for<'a>(&'a self, own: &'a Option<String>) -> Option<&'a str> {
+        non_empty(own).or_else(|| non_empty(&self.discord_username))
     }
 }
 

@@ -2,6 +2,8 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, FixedOffset};
 use serde::Deserialize;
 
+use crate::feed::{EmbedField, FeedItem, SourceKind};
+
 const USER_AGENT: &str = concat!("Hakuren-Bot/", env!("CARGO_PKG_VERSION"), " (note watcher)");
 
 #[derive(Debug, Deserialize)]
@@ -50,6 +52,38 @@ impl Note {
     pub fn is_published(&self) -> bool {
         self.status.is_empty() || self.status == "published"
     }
+
+    pub fn into_item(self) -> FeedItem {
+        let author_name = if self.user.nickname.is_empty() {
+            self.user.urlname.clone()
+        } else {
+            self.user.nickname.clone()
+        };
+        let author_url = (!self.user.urlname.is_empty())
+            .then(|| format!("https://note.com/{}", self.user.urlname));
+        FeedItem {
+            id: self.key,
+            title: self.name,
+            url: self.note_url,
+            published_at: self.publish_at,
+            author_name,
+            author_url,
+            author_icon: self.user.profile_image,
+            description: self.description,
+            thumbnail: self.eyecatch,
+            source: SourceKind::Note,
+            fields: vec![
+                EmbedField {
+                    name: "スキ".to_string(),
+                    value: self.like_count.to_string(),
+                },
+                EmbedField {
+                    name: "コメント".to_string(),
+                    value: self.comment_count.to_string(),
+                },
+            ],
+        }
+    }
 }
 
 pub struct NoteClient {
@@ -67,8 +101,7 @@ impl NoteClient {
 
     // ピン留め記事も含まれるので公開日順とは限らない
     pub async fn latest_notes(&self, urlname: &str) -> Result<Vec<Note>> {
-        let url =
-            format!("https://note.com/api/v2/creators/{urlname}/contents?kind=note&page=1");
+        let url = format!("https://note.com/api/v2/creators/{urlname}/contents?kind=note&page=1");
 
         let resp = self
             .http

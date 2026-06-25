@@ -8,3 +8,6 @@ discord_username = "Hakuren-Bot"
 urlname = "fladdict"
 webhook_url = "https://discord.com/api/webhooks/xxxxxxxxxx/yyyyyyyyyy"
 # mention = "<@&123456789012345678>"
+
+[[youtube]]
+channel = "@SomeChannel"   # @handle か UC...のID か URL

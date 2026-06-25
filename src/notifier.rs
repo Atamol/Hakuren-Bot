@@ -3,9 +3,10 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use serde_json::{json, Value};
 
-use crate::note::Note;
+use crate::feed::{FeedItem, SourceKind};
 
 const NOTE_COLOR: u32 = 0x41c9b4;
+const YOUTUBE_COLOR: u32 = 0xff0000;
 
 pub struct NotifyTarget<'a> {
     pub webhook_url: &'a str,
@@ -15,7 +16,7 @@ pub struct NotifyTarget<'a> {
 
 #[allow(async_fn_in_trait)]
 pub trait Notifier {
-    async fn notify_new_note(&self, target: &NotifyTarget<'_>, note: &Note) -> Result<()>;
+    async fn notify(&self, target: &NotifyTarget<'_>, item: &FeedItem) -> Result<()>;
 }
 
 pub struct DiscordWebhookNotifier {
@@ -33,12 +34,12 @@ impl DiscordWebhookNotifier {
 }
 
 impl Notifier for DiscordWebhookNotifier {
-    async fn notify_new_note(&self, target: &NotifyTarget<'_>, note: &Note) -> Result<()> {
+    async fn notify(&self, target: &NotifyTarget<'_>, item: &FeedItem) -> Result<()> {
         if target.webhook_url.is_empty() {
             anyhow::bail!("empty webhook url");
         }
 
-        let mut payload = json!({ "embeds": [build_embed(note)] });
+        let mut payload = json!({ "embeds": [build_embed(item)] });
         if let Some(name) = target.username {
             payload["username"] = json!(name);
         }
@@ -84,41 +85,44 @@ impl Notifier for DiscordWebhookNotifier {
     }
 }
 
-fn build_embed(note: &Note) -> Value {
-    let author_name = if note.user.nickname.is_empty() {
-        note.user.urlname.clone()
-    } else {
-        note.user.nickname.clone()
+fn build_embed(item: &FeedItem) -> Value {
+    let (color, footer) = match item.source {
+        SourceKind::Note => (NOTE_COLOR, "note"),
+        SourceKind::Youtube => (YOUTUBE_COLOR, "YouTube"),
     };
 
-    let mut author = json!({ "name": author_name });
-    if !note.user.urlname.is_empty() {
-        author["url"] = json!(format!("https://note.com/{}", note.user.urlname));
+    let mut author = json!({ "name": item.author_name });
+    if let Some(url) = item.author_url.as_deref().filter(|s| !s.is_empty()) {
+        author["url"] = json!(url);
     }
-    if let Some(icon) = note.user.profile_image.as_deref().filter(|s| !s.is_empty()) {
+    if let Some(icon) = item.author_icon.as_deref().filter(|s| !s.is_empty()) {
         author["icon_url"] = json!(icon);
     }
 
     let mut embed = json!({
-        "title": truncate(&note.name, 256),
-        "url": note.note_url,
-        "color": NOTE_COLOR,
+        "title": truncate(&item.title, 256),
+        "url": item.url,
+        "color": color,
         "author": author,
-        "footer": { "text": "note" },
-        "fields": [
-            { "name": "スキ", "value": note.like_count.to_string(), "inline": true },
-            { "name": "コメント", "value": note.comment_count.to_string(), "inline": true },
-        ],
+        "footer": { "text": footer },
     });
 
-    if let Some(desc) = note.description.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    if let Some(desc) = item.description.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         embed["description"] = json!(truncate(desc, 400));
     }
-    if let Some(img) = note.eyecatch.as_deref().filter(|s| !s.is_empty()) {
+    if let Some(img) = item.thumbnail.as_deref().filter(|s| !s.is_empty()) {
         embed["image"] = json!({ "url": img });
     }
-    if let Some(dt) = note.publish_at {
+    if let Some(dt) = item.published_at {
         embed["timestamp"] = json!(dt.to_rfc3339());
+    }
+    if !item.fields.is_empty() {
+        embed["fields"] = Value::Array(
+            item.fields
+                .iter()
+                .map(|f| json!({ "name": f.name, "value": f.value, "inline": true }))
+                .collect(),
+        );
     }
 
     embed

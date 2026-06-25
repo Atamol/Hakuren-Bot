@@ -1,5 +1,5 @@
 poll_interval_secs = 300
-notify_on_first_run = false
+notify_on_first_run = true
 state_path = "/app/data/state.json"
 webhook_url = ""
 discord_username = "Hakuren-Bot"

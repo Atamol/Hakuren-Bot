@@ -9,7 +9,7 @@ cp .env.example .env   # DISCORD_WEBHOOK_URLを埋める
 docker compose up -d --build
 ```
 
-監視対象は`config.docker.toml`の`[[watch]]`と`[[youtube]]`で指定する．stateは名前付きボリュームに残るので再起動しても再通知しない．
+監視対象は`config.docker.toml`の`[[watch]]`と`[[youtube]]`で指定する．stateは`data/`に残るので再起動しても再通知しない．
 
 ## Local
 

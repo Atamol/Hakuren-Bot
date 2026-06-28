@@ -8,7 +8,4 @@ services:
     environment:
       RUST_LOG: hakuren_bot=info
     volumes:
-      - hakuren-state:/app/data
-
-volumes:
-  hakuren-state:
+      - ./data:/app/data
